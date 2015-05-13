@@ -1,0 +1,30 @@
+{
+  "name": "pgn",
+  "version": "1.0.0",
+  "description": "A pgn parser for node.js",
+  "main": "lib/pgn.js",
+  "scripts": {
+    "test": "grunt"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tandrewnichols/pgn"
+  },
+  "keywords": [
+    "chess",
+    "pgn",
+    "portable",
+    "game",
+    "notation"
+  ],
+  "author": {
+    "name": "Andrew Nichols",
+    "email": "tandrewnichols@gmail.com",
+    "url": "www.tandrewnichols.me"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tandrewnichols/pgn/issues"
+  },
+  "homepage": "https://github.com/tandrewnichols/pgn"
+}
