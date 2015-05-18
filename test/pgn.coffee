@@ -1,328 +1,216 @@
 fs = require 'fs'
+expect = require('indeed').expect
+file = fs.readFileSync "#{__dirname}/fixtures/opera.txt", { encoding: 'utf8' }
 
 describe 'pgn', ->
   Given -> @pgn = require '../lib/pgn'
+  Given -> @contents = file
   
   describe '.parse', ->
-    context 'valid pgn', ->
-      Given (done) -> fs.readFile "#{__dirname}/fixtures/opera.txt", { encoding: 'utf8' }, (err, @contents) => done()
+    context 'header', ->
       When -> @game = @pgn.parse @contents
-      Then -> expect(@game).toEqual
-        meta:
-          event: 'Paris'
-          site: 'Paris'
-          date: '1858.??.??'
-          eventDate: '?'
-          round: '?'
-          result: '1-0'
-          white: 'Paul Morphy'
-          black: 'Duke Karl / Count Isouard'
-          ECO: 'C41'
-          whiteElo: '?'
-          blackElo: '?'
-          plyCount: '33'
-        whiteWins: true
-        blackWins: false
-        draw: false
-        moves: [
+      Then -> expect(@game.meta).to.deep.equal
+        event: 'Paris'
+        site: 'Paris'
+        date: '1858.??.??'
+        eventDate: '?'
+        round: '?'
+        result: '1-0'
+        white: 'Paul Morphy'
+        black: 'Duke Karl / Count Isouard'
+        eco: 'C41'
+        whiteElo: '?'
+        blackElo: '?'
+        plyCount: '33'
+
+    context 'result', ->
+      context 'white wins', ->
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.result).to.deep.equal
+          whiteWins: true
+          blackWins: false
+          draw: false
+
+      context 'black wins', ->
+        Given -> @contents = @contents.replace(/1-0/g, '0-1')
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.result).to.deep.equal
+          whiteWins: false
+          blackWins: true
+          draw: false
+
+      context 'draw', ->
+        Given -> @contents = @contents.replace(/1-0/g, '1/2-1/2')
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.result).to.deep.equal
+          whiteWins: false
+          blackWins: false
+          draw: true
+
+      context 'in progress, abandoned, or unknown', ->
+        Given -> @contents = @contents.replace(/1-0/g, '*')
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.result).to.deep.equal
+          whiteWins: false
+          blackWins: false
+          draw: false
+
+    context 'moves', ->
+      Given -> @contents = @contents.split('\n\n')[0]
+      context 'pawn move', ->
+        Given -> @contents += '\n\n1.e4 e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0]).to.deep.equal
           number: 1
           ply: 1
           color: 'white'
           notation: 'e4'
+          piece: ''
           check: false
           mate: false
           capture: false
           castle: false
-        ,
+          side: ''
+          promotion: false
+          to: undefined
+          comment: ''
+          mistake: false
+          blunder: false
+          dubious: false
+          interesting: false
+          good: false
+          brilliant: false
+        And -> expect(@game.moves[1]).to.deep.equal
           number: 1
           ply: 2
           color: 'black'
           notation: 'e5'
+          piece: ''
           check: false
           mate: false
           capture: false
           castle: false
-        ,
-          number: 2
-          ply: 3
-          color: 'white'
-          notation: 'Nf3'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 2
-          ply: 4
-          color: 'black'
-          notation: 'd6'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 3
-          ply: 5
-          color: 'white'
-          notation: 'd4'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 3
-          ply: 6
-          color: 'black'
-          notation: 'Bg4'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-          comment: '{This is a week move already.--Fischer}'
-        ,
-          number: 4
-          ply: 7
-          color: 'white'
-          notation: 'dxe5'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 4
-          ply: 8
-          color: 'black'
-          notation: 'Bxf3'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 5
-          ply: 9
-          color: 'white'
-          notation: 'Qxf3'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 5
-          ply: 10
-          color: 'black'
-          notation: 'dxe5'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 6
-          ply: 11
-          color: 'white'
-          notation: 'Bc4'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 6
-          ply: 12
-          color: 'black'
-          notation: 'Nf6'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 7
-          ply: 13
-          color: 'white'
-          notation: 'Qb3'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 7
-          ply: 14
-          color: 'black'
-          notation: 'Qe7'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 8
-          ply: 15
-          color: 'white'
-          notation: 'Nc3'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 8
-          ply: 16
-          color: 'black'
-          notation: 'c6'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 9
-          ply: 17
-          color: 'white'
-          notation: 'Bg5'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-          comment: "{Black is in what's like a zugzwang position here. He can't develop the [Queen's] knight because the pawn is hanging, the bishop is blocked because of the Queen.--Fischer"
-        ,
-          number: 9
-          ply: 18
-          color: 'black'
-          notation: 'b5'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 10
-          ply: 19
-          color: 'white'
-          notation: 'Nxb5'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 10
-          ply: 20
-          color: 'black'
-          notation: 'cbx5'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 11
-          ply: 21
-          color: 'white'
-          notation: 'Bxb5+'
-          check: true
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 11
-          ply: 22
-          color: 'black'
-          notation: 'Nbd7'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 12
-          ply: 23
-          color: 'white'
-          notation: 'O-O-O'
-          check: false
-          mate: false
-          capture: false
-          castle: true
-          side: 'queen'
-        ,
-          number: 12
-          ply: 24
-          color: 'black'
-          notation: 'Rd8'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 13
-          ply: 25
-          color: 'white'
-          notation: 'Rxd7'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 13
-          ply: 26
-          color: 'black'
-          notation: 'Rxd7'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 14
-          ply: 27
-          color: 'white'
-          notation: 'Rd1'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 14
-          ply: 28
-          color: 'black'
-          notation: 'Qe6'
-          check: false
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 15
-          ply: 29
-          color: 'white'
-          notation: 'Bxd7+'
-          check: true
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 15
-          ply: 30
-          color: 'black'
-          notation: 'Nxd7'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 16
-          ply: 31
-          color: 'white'
-          notation: 'Qb8+'
-          check: true
-          mate: false
-          capture: false
-          castle: false
-        ,
-          number: 16
-          ply: 32
-          color: 'black'
-          notation: 'Nxb8'
-          check: false
-          mate: false
-          capture: true
-          castle: false
-        ,
-          number: 17
-          ply: 33
-          color: 'white'
-          notation: 'Rd8#'
-          check: false
-          mate: true
-          capture: false
-          castle: false
-        ]
-        raw: "1.e4 e5 2.Nf3 d6 3.d4 Bg4 {This is a weak move already.--Fischer} 4.dxe5 Bxf3 5.Qxf3 dxe5 6.Bc4 Nf6 7.Qb3 Qe7 8.Nc3 c6 9.Bg5 {Black is in what's like a zugzwang position here. He can't develop the [Queen's] knight because the pawn is hanging, the bishop is blocked because of the Queen.--Fischer} b5 10.Nxb5 cxb5 11.Bxb5+ Nbd7 12.O-O-O Rd8 13.Rxd7 Rxd7 14.Rd1 Qe6 15.Bxd7+ Nxd7 16.Qb8+ Nxb8 17.Rd8# 1-0"
+          side: ''
+          promotion: false
+          to: undefined
+          comment: ''
+          mistake: false
+          blunder: false
+          dubious: false
+          interesting: false
+          good: false
+          brilliant: false
+
+      context 'rook move', ->
+        Given -> @contents += '\n\n1.Rg3 e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].piece).to.equal 'R'
+
+      context 'knight move', ->
+        Given -> @contents += '\n\n1.Ng3 e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].piece).to.equal 'N'
+
+      context 'bishop move', ->
+        Given -> @contents += '\n\n1.Bg3 e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].piece).to.equal 'B'
+        
+      context 'queen move', ->
+        Given -> @contents += '\n\n1.Qg3 e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].piece).to.equal 'Q'
+        
+      context 'king move', ->
+        Given -> @contents += '\n\n1.Kg3 e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].piece).to.equal 'K'
+
+      context 'check', ->
+        Given -> @contents += '\n\n1.Qg3+ e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].check).to.equal true
+
+      context 'mate', ->
+        Given -> @contents += '\n\n1.Qg3#'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].mate).to.equal true
+
+      context 'capture', ->
+        Given -> @contents += '\n\n1.Qxg3'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].capture).to.equal true
+
+      context 'castle king side', ->
+        Given -> @contents += '\n\n1.O-O'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].castle).to.equal true
+        Then -> expect(@game.moves[0].side).to.equal 'K'
+
+      context 'castle queen side', ->
+        Given -> @contents += '\n\n1.O-O-O'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].castle).to.equal true
+        Then -> expect(@game.moves[0].side).to.equal 'Q'
+
+      context 'promotion', ->
+        Given -> @contents += '\n\n1.e8=Q'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].promotion).to.equal true
+        Then -> expect(@game.moves[0].to).to.equal 'Q'
+
+      context 'white comment', ->
+        Given -> @contents += '\n\n1.e4 {Best by test.} e5'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].comment).to.equal 'Best by test.'
+
+      context 'black comment', ->
+        Given -> @contents += '\n\n1.e4 e5 {Best by test.}'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].comment).to.equal 'Best by test.'
+
+      context 'move comment', ->
+        Given -> @contents += '\n\n1.e4 e5; Best by test.'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[0].comment).to.equal 'Best by test.'
+        And -> expect(@game.moves[1].comment).to.equal 'Best by test.'
+
+      context 'mistake', ->
+        Given -> @contents += '\n\n1.e4 e5?'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].mistake).to.equal true
+
+      context 'blunder', ->
+        Given -> @contents += '\n\n1.e4 e5??'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].blunder).to.equal true
+
+      context 'dubious', ->
+        Given -> @contents += '\n\n1.e4 e5?!'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].dubious).to.equal true
+
+      context 'interesting', ->
+        Given -> @contents += '\n\n1.e4 e5!?'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].interesting).to.equal true
+
+      context 'good', ->
+        Given -> @contents += '\n\n1.e4 e5!'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].good).to.equal true
+
+      context 'brilliant', ->
+        Given -> @contents += '\n\n1.e4 e5!!'
+        When -> @game = @pgn.parse @contents
+        Then -> expect(@game.moves[1].brilliant).to.equal true
+
+    context 'no pgn', ->
+      When -> @game = @pgn.parse()
+      Then -> expect(@game).to.deep.equal {}
+
+    context 'parse error', ->
+      Given -> @contents = @contents.split('\n\n')[0]
+      When -> @game = @pgn.parse @contents
+      Then -> expect(@game.error).to.be.a 'TypeError'
+      
